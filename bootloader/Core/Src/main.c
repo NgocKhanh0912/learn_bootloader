@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define ADDRESS_START_BLINK_LED_APPLICATION (0x8004000)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -87,7 +87,25 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
+  // Turn off Peripheral, clear interrupt flag
+  HAL_RCC_DeInit();
 
+  // Clear pending interrupt request, turn off system tick
+  HAL_DeInit();
+
+  // Turn off fault handler
+  SCB->SHCSR &= ~(SCB_SHCSR_USGFAULTENA_Msk | 
+                  SCB_SHCSR_BUSFAULTENA_Msk | 
+                  SCB_SHCSR_MEMFAULTENA_Msk);
+
+  // Set main stack pointer
+  __set_MSP(*((volatile uint32_t*) ADDRESS_START_BLINK_LED_APPLICATION));
+
+  uint32_t JumpAddress = *((volatile uint32_t*) (ADDRESS_START_BLINK_LED_APPLICATION + 4));
+
+  // Set program counter to blink LED application address
+  void (*reset_handler)(void) = (void*)JumpAddress;
+  reset_handler();
   /* USER CODE END 2 */
 
   /* Infinite loop */
